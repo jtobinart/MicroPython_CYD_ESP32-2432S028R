@@ -10,7 +10,7 @@ A copy of rdagger's ili9341 library is available in the _resources_ folder.
 
 
 ## Installation
-Follow MicroPython's [installation instructions](https://learn.adafruit.com/adafruit-clue) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer CYD.py and ili9341.py to your CYD board.
+Follow MicroPython's [installation instructions](https://learn.adafruit.com/adafruit-clue) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer cydr.py and ili9341.py to your CYD board.
 
 
 ## Usage
