@@ -3,7 +3,7 @@
 # Retrieved: Dec. 2, 2023
 # Author(s): rdagger
 # License: MIT
-# https://github.com/rdagger/micropython-ili9341/blob/master/ili9341.py
+# https://github.com/rdagger/micropython-ili9341/
 
 """ILI9341 LCD/Touch module."""
 from time import sleep
