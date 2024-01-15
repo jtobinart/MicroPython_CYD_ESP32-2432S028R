@@ -102,6 +102,8 @@ class CYD(object):
         #Display
         spi1 = SPI(1, baudrate=40000000, sck=Pin(14), mosi=Pin(13))
         self.display = Display(spi1, dc=Pin(2), cs=Pin(15), rst=Pin(0))
+        self._x = 0
+        self._y = 0
         
         #Backlight
         self.tft_bl = Pin(21, Pin.OUT)
@@ -109,7 +111,7 @@ class CYD(object):
         
         #Touch
         spi2 = SPI(2, baudrate=1000000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
-        self._touch = Touch(spi2, cs=Pin(33), int_pin=Pin(36), int_handler=self.touchscreen_press)
+        self._touch = Touch(spi2, cs=Pin(33), int_pin=Pin(36), int_handler=self.touched)
         
         #Boot Button
         self._button_boot = Pin(0, Pin.IN)
@@ -148,25 +150,43 @@ class CYD(object):
     ######################################################
     #   Touchscreen Press Event
     ###################################################### 
-    def touchscreen_press(self, x, y):
+    def touched(self, x, y):
+        '''
+        Interrupt Handler
+        This function is called each time the screen is touched.
+        '''
         # Y needs to be flipped
         y = (self.display.height - 1) - y
-        print("Touch", x, y)
+
+        self._x = x
+        self._y = y
+
+        print("Touch:", x, y)
     
-    def rgb(self,(r,g,b)):
-        """ r,g,b
-            0,0,0    Off
-            0,0,1    Blue
-            0,1,0    Green
-            0,1,1    Blue Green
-            1,0,0    Red
-            1,1,0    Orange
-            1,0,1    Pink
-            1,1,1    White
-            
-            PMW Mode
-            r,g,b = 0 to 255
-        """
+    def touches():
+        '''
+        Returns last stored touch data.
+        
+        Return:
+            x: x coordinate of finger 1
+            y: y coordinate of finger 1
+        '''
+        return self._x, self._y
+    
+    ######################################################
+    #   RGB LED
+    ###################################################### 
+    def rgb(self, color):
+        '''
+        Set RGB LED color.
+        
+        Args:
+            color: Array containing three int values (r,g,b).
+                    r (0-255): Red brightness.
+                    g (0-255): Green brightness.
+                    b (0-255): Blue brightness.
+        '''
+        r, g, b = color
         if self._rgb_pmw == False:
             self.RGBr.value(1 if min(max(r, 0),1) == 0 else 0)
             self.RGBg.value(1 if min(max(g, 0),1) == 0 else 0)
@@ -176,32 +196,67 @@ class CYD(object):
             self.RGBg.duty(int(min(max(self._remap(g,0,255,1023,0), 0),1023)))
             self.RGBb.duty(int(min(max(self._remap(b,0,255,1023,0), 0),1023)))
     
-    def light(self):
-        # Light Sensor (Measures darkness)
-        # Returnes a value from 0.0 to 1.0
-        return self._ldr.read_u16()/65535
-    
-    def button_boot(self):
-        return
-    
-    def backlight(self, val):
-        self.tft_bl.value(min(max(val, 0),1))
-        
     def _remap(self, value, in_min, in_max, out_min, out_max):
         in_span = in_max - in_min
         out_span = out_max - out_min
         scale = out_span / in_span
         return out_min + (value - in_min) * scale
     
-    def play_tone(self, frequency, duration, gain=0):
-        self.speaker_pwm.freq(frequency)
+    ######################################################
+    #   Light Sensor
+    ###################################################### 
+    def light(self):
+        '''
+        Light Sensor (Measures darkness)
+        
+        Return: a value from 0.0 to 1.0
+        '''
+        return self._ldr.read_u16()/65535
+    
+    ######################################################
+    #   Button
+    ###################################################### 
+    def button_boot(self):
+        return self._button_boot.value
+    
+    ######################################################
+    #   Backlight
+    ###################################################### 
+    def backlight(self, val):
+         '''
+        Sets TFT Backlight Off/On
+        
+        Arg:
+            val: 0 or 1 (0 = off/ 1 = on)
+        '''
+        self.tft_bl.value(min(max(val, 0),1))
+    
+    ######################################################
+    #   Speaker
+    ###################################################### 
+    def play_tone(self, freq, duration, gain=0):
+        '''
+        Plays a tone (Optional speaker must be attached!)
+        
+        Args:
+            freq: Frequency of the tone.
+            duration: How long does the tone play for.
+            gain: volume
+        '''
+        self.speaker_pwm.freq(freq)
         if gain == 0:
             gain = self.speaker_gain
         self.speaker_pwm.duty(gain)             # Turn on speaker by resetting speaker gain
         time.sleep_ms(duration)
         self.speaker_pwm.duty(0)                # Turn off speaker by resetting gain to zero
     
+    ######################################################
+    #   SD Card
+    ###################################################### 
     def mount_sd(self):
+        '''
+        Mounts SD Card
+        '''
         try:
             if self._sd_ready == True:
                 os.mount(self.sd, '/sd')  # mount
@@ -211,6 +266,9 @@ class CYD(object):
             print("Failed to mount SD card")
     
     def unmount_sd(self):
+        '''
+        Unmounts SD Card
+        '''
         try:
             if self._sd_mounted == True:
                 os.unmount('/sd')  # mount
@@ -218,8 +276,18 @@ class CYD(object):
                 print("SD card unmounted. Safe to remove SD card!")
         except:
             print("Failed to unmount SD card")
-            
+    
+    ######################################################
+    #   Shutdown
+    ###################################################### 
     def shutdown(self):
+        '''
+        Resets CYD and properly shutsdown.
+        '''
+        self.display.fill_rectangle(0, 0, self.display.width-1, self.display.height-1, self.BLACK)
+        self.display.draw_rectangle(2, 2, self.display.width-5, self.display.height-5, self.RED)
+        self.display.draw_text8x8(self.display.width // 2 - 52, self.display.height // 2 - 4, "Shutting Down", self.WHITE, background=self.BLACK)
+        time.sleep(2.0)
         self.unmount_sd()
         self.speaker_pwm.deinit()
         if self._rgb_pmw == False:
@@ -227,39 +295,7 @@ class CYD(object):
             self.RGBg.value(1)
             self.RGBb.value(1)
         else:
-            cyd.rgb(0,0,0)
+            self.rgb(0,0,0)
         self.tft_bl.value(0)
         self.display.cleanup()
         print("========== Goodbye ==========")
-
-######################################################
-#   Main Code for Testing
-######################################################
-'''
-cyd = CYD(speaker_gain=1)
-cnt = 0
-try:
-    while True:
-        if cnt == 2000:
-            cnt = 0
-            
-        else:
-            cnt = cnt + 1
-        
-        idle()
-        '''
-        # Play a few tones
-        print("Playing Tone 1")
-        cyd.play_tone(220, 500)  # A4 for 500 milliseconds
-        time.sleep(1.0)      # Pause for 200 milliseconds
-        print("Playing Tone 2")
-        cyd.play_tone(440, 500)  # C5 for 500 milliseconds
-        time.sleep(1.0)
-        '''
-
-except KeyboardInterrupt:
-    print("\nCtrl-C pressed.  Shutdown in progress...")
-    
-finally:
-    cyd.shutdown()
-'''
