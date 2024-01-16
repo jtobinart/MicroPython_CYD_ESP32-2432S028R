@@ -1,6 +1,6 @@
 # CYDc Library
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
-# Last Updated: Dec. 2, 2023
+# Last Updated: Jan. 15, 2024
 # Author(s): James Tobin
 # License: MIT
 # https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
@@ -37,8 +37,8 @@ v1
     
     
     TO DO:
-        - Implement DAC pin 26 for speaker instead of using PWM
-        - SD card creates a critical error when using keyboard interupt. Leave sd_enabled = False, unless using it.
+        - Implement DAC pin 26 for the speaker instead of using PWM
+        - SD card creates a critical error when using keyboard interrupt. Leave sd_enabled = False, unless using it.
         - Implement easy Bluetooth functions
         - Implement easy Wifi functions
 '''
@@ -77,7 +77,7 @@ Pins
     32   Digital   Touch XPT2046              - MOSI
     33   Digital   Touch XPT2046              - CS
     34   Analog    LDR Light Sensor           - !!!Input ONLY!!!
-    35   Digital   P3 Connector               - !!!Input ONLY w/ NO pull ups!!!
+    35   Digital   P3 Connector               - !!!Input ONLY w/ NO pull-ups!!!
     36   Digital   Touch XPT2046              - IRQ !!!Input ONLY!!!
     39   Digital   Touch XPT2046              - MISO !!!Input ONLY!!!
    
@@ -92,34 +92,42 @@ from xpt2046 import Touch
 from machine import idle, Pin, SPI, ADC, PWM, SDCard, DAC
 import os
 import time
-from math import fabs
-
-
 
 class CYD(object):
-    def __init__(self, rgb_pmw=False, withSD=True, speaker_gain=512, sd_enabled = False):
-        
-        #Display
+    def __init__(self, rgb_pmw=False, speaker_gain=512, sd_enabled = False):
+        '''
+        Initialize CDYc
+
+        Args:
+            rgb_pmw (Default = False): Sets RGB LED to static mode. (on/off), if false
+                                       Sets RGB LED to dynamic mode. (16.5+ million color combination), if true
+                                       Warning: RGB LED never completely turns off in dynamic mode.
+            
+            speaker_gain (Default = 512): Sets speaker's volume. The full gain range is 0 - 1023.
+
+            sd_enabled (Default = False): Initializes SD Card reader, user still needs to run mount_sd() to access SD card.
+        '''
+        # Display
         spi1 = SPI(1, baudrate=40000000, sck=Pin(14), mosi=Pin(13))
         self.display = Display(spi1, dc=Pin(2), cs=Pin(15), rst=Pin(0))
         self._x = 0
         self._y = 0
         
-        #Backlight
+        # Backlight
         self.tft_bl = Pin(21, Pin.OUT)
         self.tft_bl.value(1) #Turn on backlight 
         
-        #Touch
+        # Touch
         spi2 = SPI(2, baudrate=1000000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
         self._touch = Touch(spi2, cs=Pin(33), int_pin=Pin(36), int_handler=self.touched)
         
-        #Boot Button
+        # Boot Button
         self._button_boot = Pin(0, Pin.IN)
         
-        #LDR: Light Sensor (Measures Darkness)
+        # LDR: Light Sensor (Measures Darkness)
         self._ldr = ADC(34)
         
-        #RGB LED
+        # RGB LED
         self._rgb_pmw = rgb_pmw
         if self._rgb_pmw == False:
             self.RGBr = Pin(4, Pin.OUT, value=1)     # Red
@@ -131,12 +139,12 @@ class CYD(object):
             self.RGBb = PWM(Pin(17), freq=200, duty=1023)    # Blue
             print("RGB PMW Ready")
         
-        #Speaker
+        # Speaker
         self._speaker_pin = Pin(26, Pin.OUT)
         self.speaker_gain = int(min(max(speaker_gain, 0),1023))     # Min 0, Max 1023
         self.speaker_pwm = PWM(self._speaker_pin, freq=440, duty=0)
             
-        #SD Card
+        # SD Card
         self._sd_ready = False
         self._sd_mounted = False
         if sd_enabled == True:
@@ -182,9 +190,14 @@ class CYD(object):
         
         Args:
             color: Array containing three int values (r,g,b).
-                    r (0-255): Red brightness.
-                    g (0-255): Green brightness.
-                    b (0-255): Blue brightness.
+                    if rgb_pmw == False, then static mode is activated.
+                        r (0 or 1): Red brightness.
+                        g (0 or 1): Green brightness.
+                        b (0 or 1): Blue brightness.
+                    if rgb_pmw == True, then dynamic mode is activated.
+                        r (0-255): Red brightness.
+                        g (0-255): Green brightness.
+                        b (0-255): Blue brightness.
         '''
         r, g, b = color
         if self._rgb_pmw == False:
@@ -197,6 +210,9 @@ class CYD(object):
             self.RGBb.duty(int(min(max(self._remap(b,0,255,1023,0), 0),1023)))
     
     def _remap(self, value, in_min, in_max, out_min, out_max):
+        '''
+        Internal function for remapping values from one scale to a second.
+        '''
         in_span = in_max - in_min
         out_span = out_max - out_min
         scale = out_span / in_span
@@ -217,6 +233,9 @@ class CYD(object):
     #   Button
     ###################################################### 
     def button_boot(self):
+        '''
+        Gets the Boot button's current state
+        '''
         return self._button_boot.value
     
     ######################################################
