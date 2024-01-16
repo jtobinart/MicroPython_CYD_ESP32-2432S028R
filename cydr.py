@@ -94,6 +94,14 @@ import os
 import time
 
 class CYD(object):
+    BLACK  = color565(  0,   0,   0)
+    RED    = color565(255,   0,   0)
+    GREEN  = color565(  0, 255,   0)
+    CYAN   = color565(  0, 255, 255)
+    BLUE   = color565(  0,   0, 255)
+    PURPLE = color565(255,   0, 255)
+    WHITE  = color565(255, 255, 255)
+    
     def __init__(self, rgb_pmw=False, speaker_gain=512, sd_enabled = False):
         '''
         Initialize CDYc
@@ -242,7 +250,7 @@ class CYD(object):
     #   Backlight
     ###################################################### 
     def backlight(self, val):
-         '''
+        '''
         Sets TFT Backlight Off/On
         
         Arg:
