@@ -171,8 +171,7 @@ class CYD(object):
         Interrupt Handler
         This function is called each time the screen is touched.
         '''
-        # Y needs to be flipped
-        #y = (self.display.height - 1) - y
+        # X needs to be flipped
         x = (self.display.width - 1) - x
 
         self._x = x
