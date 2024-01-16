@@ -309,7 +309,7 @@ class CYD(object):
     ###################################################### 
     def shutdown(self):
         '''
-        Resets CYD and properly shutsdown.
+        Resets CYD and properly shuts down.
         '''
         self.display.fill_rectangle(0, 0, self.display.width-1, self.display.height-1, self.BLACK)
         self.display.draw_rectangle(2, 2, self.display.width-5, self.display.height-5, self.RED)
