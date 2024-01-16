@@ -172,14 +172,15 @@ class CYD(object):
         This function is called each time the screen is touched.
         '''
         # Y needs to be flipped
-        y = (self.display.height - 1) - y
+        #y = (self.display.height - 1) - y
+        x = (self.display.width - 1) - x
 
         self._x = x
         self._y = y
 
-        print("Touch:", x, y)
+        #print("Touch:", x, y)
     
-    def touches():
+    def touches(self):
         '''
         Returns last stored touch data.
         
@@ -187,7 +188,13 @@ class CYD(object):
             x: x coordinate of finger 1
             y: y coordinate of finger 1
         '''
-        return self._x, self._y
+        x = self._x
+        y = self._y
+        
+        self._x = 0
+        self._y = 0
+        
+        return x, y
     
     ######################################################
     #   RGB LED
