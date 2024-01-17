@@ -1,6 +1,6 @@
 # CYDc Library
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
-# Last Updated: Jan. 15, 2024
+# Last Updated: Jan. 16, 2024
 # Author(s): James Tobin
 # License: MIT
 # https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
@@ -32,15 +32,18 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 cydr.py:
 
+v1.1
+    Double Tap detection implemented. XPT2046 touch switched from SPI to SoftSPI.
+
 v1
     This is a higher-level library to control DIYmall's ESP32-2432S028R, also known as the Cheap Yellow Display (CYD).
     
     
-    TO DO:
-        - Implement DAC pin 26 for the speaker instead of using PWM
-        - SD card creates a critical error when using keyboard interrupt. Leave sd_enabled = False, unless using it.
-        - Implement easy Bluetooth functions
-        - Implement easy Wifi functions
+TO DO:
+    - Implement DAC pin 26 for the speaker instead of using PWM
+    - SD card creates a critical error when using keyboard interrupt. Leave sd_enabled = False, unless using it.
+    - Implement easy Bluetooth functions
+    - Implement easy Wifi functions
 '''
 
 ######################################################
@@ -71,25 +74,24 @@ Pins
     21   Digital   Display & Connector P3     - TFT_BL (BackLight) / I2C SDA
     22   Digital   Connector P3 & CN1         - I2C SCL
     23   Digital   SD Card                    - MOSI [VSPI]
-    25   Digital   Touch XPT2046              - CLK
+    25   Digital   Touch XPT2046              - CLK [Software SPI]
     26   Analog    Speaker                    - !!!Speaker ONLY! Connected to Amp!!!
     27   Digital   Connector CN1              - Can be used as a capacitive touch sensor pin.
-    32   Digital   Touch XPT2046              - MOSI
-    33   Digital   Touch XPT2046              - CS
+    32   Digital   Touch XPT2046              - MOSI [Software SPI]
+    33   Digital   Touch XPT2046              - CS [Software SPI]
     34   Analog    LDR Light Sensor           - !!!Input ONLY!!!
     35   Digital   P3 Connector               - !!!Input ONLY w/ NO pull-ups!!!
-    36   Digital   Touch XPT2046              - IRQ !!!Input ONLY!!!
-    39   Digital   Touch XPT2046              - MISO !!!Input ONLY!!!
+    36   Digital   Touch XPT2046              - IRQ !!!Input ONLY!!! 
+    39   Digital   Touch XPT2046              - MISO !!!Input ONLY!!! [Software SPI]
    
 """
-
 
 ######################################################
 #   Import
 ######################################################
 from ili9341 import Display, color565
 from xpt2046 import Touch
-from machine import idle, Pin, SPI, ADC, PWM, SDCard, DAC
+from machine import Pin, SPI, ADC, PWM, SDCard, SoftSPI
 import os
 import time
 
@@ -116,8 +118,8 @@ class CYD(object):
             sd_enabled (Default = False): Initializes SD Card reader, user still needs to run mount_sd() to access SD card.
         '''
         # Display
-        spi1 = SPI(1, baudrate=40000000, sck=Pin(14), mosi=Pin(13))
-        self.display = Display(spi1, dc=Pin(2), cs=Pin(15), rst=Pin(0))
+        hspi = SPI(1, baudrate=40000000, sck=Pin(14), mosi=Pin(13))
+        self.display = Display(hspi, dc=Pin(2), cs=Pin(15), rst=Pin(0))
         self._x = 0
         self._y = 0
         
@@ -126,8 +128,9 @@ class CYD(object):
         self.tft_bl.value(1) #Turn on backlight 
         
         # Touch
-        spi2 = SPI(2, baudrate=1000000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
-        self._touch = Touch(spi2, cs=Pin(33), int_pin=Pin(36), int_handler=self.touched)
+        self.last_tap = (-1,-1)
+        sspi = SoftSPI(baudrate=100000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
+        self._touch = Touch(sspi, cs=Pin(33), int_pin=Pin(36), int_handler=self.touch_handler)
         
         # Boot Button
         self._button_boot = Pin(0, Pin.IN)
@@ -166,7 +169,7 @@ class CYD(object):
     ######################################################
     #   Touchscreen Press Event
     ###################################################### 
-    def touched(self, x, y):
+    def touch_handler(self, x, y):
         '''
         Interrupt Handler
         This function is called each time the screen is touched.
@@ -195,6 +198,22 @@ class CYD(object):
         
         return x, y
     
+    def double_tap(self, x, y, error_margin = 5):
+        '''
+        Returns whether or not a double tap was detected.
+        
+        Return:
+            True: Double-tap detected.
+            False: Single tap detected.
+        '''
+        # Double tap to exit
+        if self.last_tap[0] - error_margin <= x and self.last_tap[0] + error_margin >= x:
+            if self.last_tap[1] - error_margin <= y and self.last_tap[1] + error_margin >= y:
+                self.last_tap = (-1,-1)
+                return True
+        self.last_tap = (x,y)
+        return False
+        
     ######################################################
     #   RGB LED
     ###################################################### 
