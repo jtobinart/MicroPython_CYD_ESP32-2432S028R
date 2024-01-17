@@ -20,8 +20,6 @@ colors = [cyd.RED, cyd.GREEN, cyd.BLUE]
 c = 0    # Initial color choice
 r = 4    # Radius of cirlces
 
-last_tap = (0,0) # Previous Tap
-
 while True:
     time.sleep(0.05)
     x, y = cyd.touches()    #
@@ -31,12 +29,8 @@ while True:
         continue
     
     # Double tap to exit
-    if last_tap[0] - 5 <= x and last_tap[0] + 5 >= x:
-        if last_tap[1] - 5 <= y and last_tap[1] + 5 >= y:
-            break
-        
-    # Save last tap coordinates
-    last_tap = (x,y)
+    if cyd.double_tap(x,y):
+        break
 
     print("Touches:", x, y)
 
