@@ -1,6 +1,6 @@
 # CYDc Library
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
-# Last Updated: Jan. 16, 2024
+# Last Updated: Jan. 27, 2024
 # Author(s): James Tobin
 # License: MIT
 # https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
@@ -32,16 +32,20 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 cydr.py:
 
+v1.2
+    SD card initialization and mounting have been streamed lined and users no longer need to declare that they want to
+    use the SD card when creating an instance of the CYD class.
+
 v1.1
     Double Tap detection implemented. XPT2046 touch switched from SPI to SoftSPI.
 
-v1
+v1.0
     This is a higher-level library to control DIYmall's ESP32-2432S028R, also known as the Cheap Yellow Display (CYD).
     
-    
 TO DO:
+    - Implement continuous touch 
     - Implement DAC pin 26 for the speaker instead of using PWM
-    - SD card creates a critical error when using keyboard interrupt. Leave sd_enabled = False, unless using it.
+    - SD card creates a critical error when using keyboard interrupt
     - Implement easy Bluetooth functions
     - Implement easy Wifi functions
 '''
