@@ -96,6 +96,9 @@ import os
 import time
 
 class CYD(object):
+    ######################################################
+    #   Color Variables
+    ######################################################
     BLACK  = color565(  0,   0,   0)
     RED    = color565(255,   0,   0)
     GREEN  = color565(  0, 255,   0)
@@ -103,8 +106,27 @@ class CYD(object):
     BLUE   = color565(  0,   0, 255)
     PURPLE = color565(255,   0, 255)
     WHITE  = color565(255, 255, 255)
-    
-    def __init__(self, rgb_pmw=False, speaker_gain=512, sd_enabled = False):
+
+    ######################################################
+    #   Function List
+    ######################################################
+    '''
+        cyd = CYD(rgb_pmw=False, speaker_gain=512)      # Initialize CYD class
+        cyd.display.ili9341_function_name()             # Use to access ili9341 functions.
+        cyd._touch_handler(x, y)                        # Called when a touch occurs. (INTERNAL USE ONLY)
+        cyd.touches()                                   # GETS the last touch coordinates.
+        cyd.double_tap(x, y, error_margin = 5)          # Check for double taps.
+        cyd.rgb(color)                                          # SETS rgb LED color.
+        cyd._remap(value, in_min, in_max, out_min, out_max)     # Converts a value form one scale to another. (INTERNAL USE ONLY)
+        cyd.light()                                             # GETS the current light sensor value.
+        cyd.button_boot()                               # GETS the current boot button value.
+        cyd.backlight(value)                            # SETS backlight brightness.
+        cyd.play_tone(freq, duration, gain=0)           # Plays a tone for a given duration.
+        cyd.mount_sd()                                  # Mounts SD card         
+        cyd.unmount_sd()                                # Unmounts SD card.
+        cyd.shutdown()                                  # Safely shutdown CYD device.
+    '''
+    def __init__(self, rgb_pmw=False, speaker_gain=512):
         '''
         Initialize CDYc
 
@@ -129,8 +151,8 @@ class CYD(object):
         
         # Touch
         self.last_tap = (-1,-1)
-        sspi = SoftSPI(baudrate=100000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
-        self._touch = Touch(sspi, cs=Pin(33), int_pin=Pin(36), int_handler=self.touch_handler)
+        sspi = SoftSPI(baudrate=500000, sck=Pin(25), mosi=Pin(32), miso=Pin(39))
+        self._touch = Touch(sspi, cs=Pin(33), int_pin=Pin(36), int_handler=self._touch_handler)
         
         # Boot Button
         self._button_boot = Pin(0, Pin.IN)
@@ -158,18 +180,11 @@ class CYD(object):
         # SD Card
         self._sd_ready = False
         self._sd_mounted = False
-        if sd_enabled == True:
-            try:
-                self.sd = SDCard(slot=2)
-                self._sd_ready = True
-                print("SD card ready to mount.")
-            except:
-                print("Failed to setup SD Card.") 
     
     ######################################################
     #   Touchscreen Press Event
     ###################################################### 
-    def touch_handler(self, x, y):
+    def _touch_handler(self, x, y):
         '''
         Interrupt Handler
         This function is called each time the screen is touched.
@@ -310,10 +325,14 @@ class CYD(object):
         Mounts SD Card
         '''
         try:
+            if self._sd_ready == False:
+                self.sd = SDCard(slot=2)
+                self._sd_ready = True
             if self._sd_ready == True:
                 os.mount(self.sd, '/sd')  # mount
                 self._sd_mounted = True
                 print("SD card mounted. Do not remove!")
+
         except:
             print("Failed to mount SD card")
     
