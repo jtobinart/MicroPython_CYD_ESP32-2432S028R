@@ -96,6 +96,7 @@ Pins
 from ili9341 import Display, color565
 from xpt2046 import Touch
 from machine import Pin, SPI, ADC, PWM, SDCard, SoftSPI
+import network
 import os
 import time
 
@@ -130,7 +131,8 @@ class CYD(object):
         cyd.unmount_sd()                                # Unmounts SD card.
         cyd.shutdown()                                  # Safely shutdown CYD device.
     '''
-    def __init__(self, rgb_pmw=False, speaker_gain=512):
+    def __init__(self, rgb_pmw=False, speaker_gain=512,
+                 ssid = None, ssid_password = None):
         '''
         Initialize CDYc
 
@@ -184,6 +186,27 @@ class CYD(object):
         # SD Card
         self._sd_ready = False
         self._sd_mounted = False
+
+        # Wifi
+        # internal methods
+        self._sta_if = network.WLAN(network.STA_IF)
+        self._ap_if = network.WLAN(network.AP_IF)
+        
+        # if connected alread to wifi, get our ip and dns
+        if self.sta_status:
+            self._update_wifi_connection_info()
+        
+        # init wifi connection if ssid and password were passed on construction
+        if ssid != None:
+            self.ssid = ssid
+            self.ssid_password = ssid_password           # ok if there is None
+        if ssid_password != None:                           # because we check
+            self.connect_to_network(ssid,ssid_password)
+        
+        # init access point and wifi network (sta) connection status
+        self.ap_status = self._ap_if.active()
+        self.sta_status = self._sta_if.active()
+            
     
     ######################################################
     #   Touchscreen Press Event
@@ -352,6 +375,45 @@ class CYD(object):
         except:
             print("Failed to unmount SD card")
     
+    ######################################################
+    #   Wifi
+    ######################################################
+    def _update_wifi_connection_info(self):
+        """  Updates the ip and dns properties"""
+        self._ifconfig = self._ap_if.ifconfig()
+        self.ip = self._ifconfig[0]
+        self.dns = self._ifconfig[-1]
+    
+    def check_network_connection(self):
+        """ Checks for an existant wifi connection
+            
+            no args
+            returns: bool
+        """
+        return self._sta_if.isconnected()
+    
+    def connect_to_network(self, SSID = None, password = None):
+        """ Network Connection 
+        """
+        if not self.check_network_connection():
+            self._sta_if.active(True)
+
+        if SSID == None:
+            this_ssid = self.ssid
+        else:
+            this_ssid = SSID
+        if password == None:
+            this_pword = self.ssid_password
+        else:
+            this_pword = password
+
+        self._sta_if.connect(SSID,password)
+
+        self._update_wifi_connection_info()
+
+        self.sta_status = self._sta_if.active()
+
+
     ######################################################
     #   Shutdown
     ###################################################### 
