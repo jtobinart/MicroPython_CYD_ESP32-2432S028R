@@ -32,6 +32,12 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 cydr.py:
 
+v1.3
+    Added wifi methods for init and management.  So far station (wifi connections) only not access point.
+    Supports optional constructor parameters 'ssid=<network>,ssid_password=<wifi_password>.  It also implements
+    helper methods and properties that should streamline handling wifi.  Methods are gentle and should check for
+    and populate from pre-existing connections when instantiated.
+
 v1.2
     SD card initialization and mounting have been streamed lined and users no longer need to declare that they want to
     use the SD card when creating an instance of the CYD class.
@@ -189,10 +195,11 @@ class CYD(object):
 
         # Wifi
         # internal methods
-        self._sta_if = network.WLAN(network.STA_IF)
-        self._ap_if = network.WLAN(network.AP_IF)
+        self._sta_if = network.WLAN(network.STA_IF) # sta - wifi network
+        self._ap_if = network.WLAN(network.AP_IF)   # ap  - access point
         
         # if connected alread to wifi, get our ip and dns
+        self._update_connections_status()
         if self.sta_status:
             self._update_wifi_connection_info()
         
@@ -203,9 +210,11 @@ class CYD(object):
         if ssid_password != None:                           # because we check
             self.connect_to_network(ssid,ssid_password)
         
-        # init access point and wifi network (sta) connection status
+        # init access point (ap) connection status
         self.ap_status = self._ap_if.active()
-        self.sta_status = self._sta_if.active()
+        if self.ap_status:
+            self._update_ap_connection_info()
+
             
     
     ######################################################
@@ -379,10 +388,27 @@ class CYD(object):
     #   Wifi
     ######################################################
     def _update_wifi_connection_info(self):
-        """  Updates the ip and dns properties"""
-        self._ifconfig = self._ap_if.ifconfig()
+        """  Updates the ip and dns properties
+             for sta (network) not ap
+        """
+        self._ifconfig = self._sta_if.ifconfig()
         self.ip = self._ifconfig[0]
         self.dns = self._ifconfig[-1]
+    
+    def _update_ap_connection_info(self):
+        """   Update the ap info
+        """
+        self._ap_ifconfig = self._ap_if.ifconfig()
+        self.ap_ip = self._ifconfig[0]
+        self.ap_dns = self._ifconfig[-1]
+
+    def _update_connections_status(self):
+        """ Yes, plural for both local access point (ap)
+            and wifi network (sta)
+        """
+        # init access point and wifi network (sta) connection status
+        self.ap_status = self._ap_if.active()
+        self.sta_status = self._sta_if.active()
     
     def check_network_connection(self):
         """ Checks for an existant wifi connection
