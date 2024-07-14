@@ -11,7 +11,7 @@ A copy of rdagger's ili9341 and xpt2046 libraries are available in the _resource
 
 
 ## Installation
-Follow MicroPython's [installation instructions](https://learn.adafruit.com/adafruit-clue) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer cydr.py, ili9341.py, and xpt2046.py to your CYD board.
+Follow MicroPython's [installation instructions](https://micropython.org/download/ESP32_GENERIC/) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer cydr.py, ili9341.py, and xpt2046.py to your CYD board.
 
 
 ## Usage
