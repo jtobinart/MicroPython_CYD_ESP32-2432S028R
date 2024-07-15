@@ -1,9 +1,9 @@
 # CYDc Touchscreen Demo
-# Tags: Micropython Smaller Cheap Yellow Device Capacitive Touch cst820 DIYmall ESP32-2432S024C 
-# Last Updated: Jan. 15, 2024
+# Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
+# Last Updated: June 14, 2024
 # Author(s): James Tobin
 # License: MIT
-# https://github.com/jtobinart/Micropython_CYDc_ESP32-2432S024C
+# https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
 
 from cydr import CYD
 import time
