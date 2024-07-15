@@ -3,7 +3,7 @@ This is a higher-level library to allows MicroPython users to easily control the
 
 ## Dependencies
 This library depends on:
-* [MicroPython](https://micropython.org/download/ESP32_GENERIC/) - Firmware: v1.22.1 (2024-01-05) .bin
+* [MicroPython](https://micropython.org/download/ESP32_GENERIC/) - Firmware: v1.23.0 (2024-06-02) .bin (UPDATED)
 * [rdagger/micropython-ili9341](https://github.com/rdagger/micropython-ili9341/) - ili9341.py, Retrieved: 12/2/23
 * [rdagger/micropython-ili9341](https://github.com/rdagger/micropython-ili9341/) - xpt2046.py, Retrieved: 12/2/23
 
@@ -11,7 +11,7 @@ A copy of rdagger's ili9341 and xpt2046 libraries are available in the _resource
 
 
 ## Installation
-Follow MicroPython's [installation instructions](https://micropython.org/download/ESP32_GENERIC/) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer cydr.py, ili9341.py, and xpt2046.py to your CYD board.
+Follow MicroPython's [installation instructions](https://micropython.org/download/ESP32_GENERIC/) to get your CYD board ready. Use your preferred MicroPython IDE (e.g. [Thonny](https://thonny.org/)) to transfer cydr.py, boot.py, ili9341.py, and xpt2046.py to your CYD board.
 
 
 ## Usage
