@@ -24,8 +24,8 @@ or
 ```python
 from cydr import CYD
 cyd = CYD(rgb_pmw=False, speaker_gain=512,
-      display_width=240, display_height=320,
-      wifi_ssid = None, wifi_password = None)
+          display_width=240, display_height=320,
+          wifi_ssid = None, wifi_password = None)
 ```
 to access the CYD or you can use one of the example programs provided in the repository.
 
