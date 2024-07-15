@@ -1,10 +1,9 @@
 # CYDc Library
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
-# Last Updated: Jan. 27, 2024
+# Last Updated: June. 14, 2024
 # Author(s): James Tobin
 # License: MIT
 # https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
-print("loading...")
 ######################################################
 #   MIT License
 ######################################################
@@ -32,6 +31,15 @@ OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 cydr.py:
 
+v1.3
+    - Simple WIFI functions added. Users may connect to an existing WIFI netowrk while creating a instance of the CYD
+      class by assigning values to wifi_ssid and wifi_password (replace None with your WIFI login information:
+      cyd = CYD(rgb_pmw=False, speaker_gain=512, display_width=240, display_height=320, wifi_ssid = None, wifi_password = None)
+      or users can connect to a network by calling the cyd.wifi_connect("ssid", "password") after CYD instance has been created.
+    - Users can also create an Access Point (AP) for other devices to connect to by using cyd.wifi_create_ap("ssid").
+    - Users can now specify the dimensions of their display while creating an instance of the CYD class by assigning new values
+      to display_width and display_height.
+
 v1.2
     SD card initialization and mounting have been streamed lined and users no longer need to declare that they want to
     use the SD card when creating an instance of the CYD class.
@@ -47,7 +55,6 @@ TO DO:
     - Implement DAC pin 26 for the speaker instead of using PWM
     - SD card creates a critical error when using keyboard interrupt
     - Implement easy Bluetooth functions
-    - Implement easy Wifi functions
 '''
 
 ######################################################
@@ -96,6 +103,7 @@ Pins
 from ili9341 import Display, color565
 from xpt2046 import Touch
 from machine import Pin, SPI, ADC, PWM, SDCard, SoftSPI
+import network
 import os
 import time
 
@@ -115,7 +123,7 @@ class CYD(object):
     #   Function List
     ######################################################
     '''
-        cyd = CYD(rgb_pmw=False, speaker_gain=512, display_width=240, display_height=320)      # Initialize CYD class
+        cyd = CYD(rgb_pmw=False, speaker_gain=512, display_width=240, display_height=320, wifi_ssid = None, wifi_password = None) # Initialize CYD class
         cyd.display.ili9341_function_name()             # Use to access ili9341 functions.
         cyd._touch_handler(x, y)                        # Called when a touch occurs. (INTERNAL USE ONLY)
         cyd.touches()                                   # GETS the last touch coordinates.
@@ -128,9 +136,13 @@ class CYD(object):
         cyd.play_tone(freq, duration, gain=0)           # Plays a tone for a given duration.
         cyd.mount_sd()                                  # Mounts SD card
         cyd.unmount_sd()                                # Unmounts SD card.
+        cyd.wifi_connect(ssid, password)                # Connects to a WLAN network.
+        cyd.wifi_isconnected()                          # Checks to see that the wifi connection is connected.
+        cyd.wifi_ip()                                   # Get the CYD's IPv4 address on your WLAN.
+        cyd.wifi_create_ap(_ssid)                       # Creates an Access Point (AP) WLAN network.
         cyd.shutdown()                                  # Safely shutdown CYD device.
     '''
-    def __init__(self, rgb_pmw=False, speaker_gain=512, display_width=240, display_height=320):
+    def __init__(self, rgb_pmw=False, speaker_gain=512, display_width=240, display_height=320, wifi_ssid = None, wifi_password = None):
         '''
         Initialize CDYc
 
@@ -185,7 +197,14 @@ class CYD(object):
         # The user needs to run mount_sd() to access SD card.
         self._sd_ready = False
         self._sd_mounted = False
-
+        
+        # WIFI
+        if wifi_ssid is not None:
+            print("Connecting to wifi...")
+            self.wifi_connect(wifi_ssid, wifi_password)             # connect to WLAN Network
+        
+        print("CYD ready...")
+        
     ######################################################
     #   Touchscreen Press Event
     ######################################################
@@ -218,7 +237,7 @@ class CYD(object):
 
         return x, y
 
-    def double_tap(self, x, y, error_margin = 5):
+    def double_tap(self, x, y, error_margin = 10):
         '''
         Returns whether or not a double tap was detected.
 
@@ -352,6 +371,61 @@ class CYD(object):
                 print("SD card unmounted. Safe to remove SD card!")
         except:
             print("Failed to unmount SD card")
+    
+    ######################################################
+    #   Wifi
+    ######################################################
+    def wifi_connect(self, ssid, password):
+        '''
+        Connects to a WLAN network.
+        The CYD (client) can connect to an existing WLAN network (station).
+        
+        Args:
+            ssid: The name of the network you want to connect to.
+            password: The network password for the ssid you are connecting to.
+        '''
+        self.wifi = network.WLAN(network.STA_IF)    # Creates a station interface
+        self.wifi.active(True)
+        self.wifi.config(reconnects=3)              # Sets timeout count
+        print('connecting to network...')
+        self.wifi.connect(ssid, password)           # Connects to an existing network
+        while not self.wifi.isconnected():
+            pass
+        print('network config:', self.wifi_ip())    # Get the interface's IPv4 addresses
+        
+    def wifi_isconnected(self):
+        '''
+        Checks to see that the wifi connection is connected.
+        
+        Returns:
+            True: Device connected to a network.
+            False: Device not connected to a network.
+        '''
+        return self.wifi.isconnected()
+    
+    def wifi_ip(self):
+        '''
+        Get the CYD's IPv4 address on your WLAN.
+        
+        Returns: The IP address of your device.
+        '''
+        ip, _, _, _ = self.wifi.ifconfig()
+        return ip
+    
+    def wifi_create_ap(self, _ssid):
+        '''
+        Creates an Access Point (AP) WLAN network.
+        Other devices (clients) can connect to this CYD (station) via wifi.
+        
+        Args:
+            _ssid: The name of your new AP. This is the wifi id that client devices are going to connect to.
+        '''
+        self.wifi_ap = network.WLAN(network.AP_IF)  # Create AP interface
+        self.wifi_ap.config(ssid=_ssid)             # Set the SSID of your AP
+        self.wifi_ap.config(max_clients=10)         # Set how many devices can connect to your AP network
+        self.wifi_ap.active(True)                   # Activate the AP interface
+        print('network config:', self.wifi_ip())    # Get your device's IPv4 address
+    
 
     ######################################################
     #   Shutdown
