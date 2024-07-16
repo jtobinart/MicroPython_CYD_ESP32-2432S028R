@@ -1,4 +1,4 @@
-# CYDc Advance WIFI Demo
+# CYDr Advance WIFI Demo
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
 # Last Updated: June 15, 2024
 # Author(s): James Tobin
