@@ -1,4 +1,4 @@
-# CYDc Library
+# CYDr Speaker Demo
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
 # Last Updated: Jan. 15, 2024
 # Author(s): James Tobin
