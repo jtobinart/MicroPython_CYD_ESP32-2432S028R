@@ -1,6 +1,6 @@
-# CYDc Touchscreen Demo
+# CYDr Touchscreen Demo
 # Tags: Micropython Cheap Yellow Device DIYmall ESP32-2432S028R
-# Last Updated: June 14, 2024
+# Last Updated: June 15, 2024
 # Author(s): James Tobin
 # License: MIT
 # https://github.com/jtobinart/MicroPython_CYD_ESP32-2432S028R
