@@ -222,6 +222,25 @@ class CYD(object):
 
         #print("Touch:", x, y)
 
+    def raw(self):
+        '''
+        Returns all touch-data readable
+
+        Return:
+            p: pressure of the touch;  x * (z1 - z2) / z1 if z1>0 else None
+            x: x coordinate of finger 1
+            y: y coordinate of finger 1
+
+            z1: touchplate z1 position
+            z2: touchplate z2 position
+            t0: TEMP0 command result
+            t1: TEMP1 command result
+            b: GET_BATTERY command result
+            a: GET_AUX command result
+            d: number of milliseconds since this self.raw() routine last detected another touch
+        '''
+        return self._touch.raw_touch() # p, x, y, z1, z2, t0, t1, b, a, d = touch.raw_touch()
+
     def touches(self):
         '''
         Returns last stored touch data.
